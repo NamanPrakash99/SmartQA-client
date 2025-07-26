@@ -1,0 +1,61 @@
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { setUser } from "../userSlice";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { serverEndpoint } from "../config/appConfig";
+
+function Signup() {
+    const [form, setForm] = useState({ name: "", email: "", password: "", role: "user" });
+    const [error, setError] = useState("");
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const handleChange = (e) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        try {
+            const res = await axios.post(`${serverEndpoint.replace(/\/$/, "")}/auth/signup`, form);
+            dispatch(setUser({ ...res.data.user, token: res.data.token }));
+            navigate("/");
+        } catch (err) {
+            setError(err.response?.data?.message || "Signup failed");
+        }
+    };
+
+    return (
+        <div className="container py-5">
+            <div className="row justify-content-center">
+                <div className="col-md-5">
+                    <h2 className="mb-4 text-center">Sign Up</h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="mb-3">
+                            <input type="text" name="name" className="form-control" placeholder="Name" value={form.name} onChange={handleChange} required />
+                        </div>
+                        <div className="mb-3">
+                            <input type="email" name="email" className="form-control" placeholder="Email" value={form.email} onChange={handleChange} required />
+                        </div>
+                        <div className="mb-3">
+                            <input type="password" name="password" className="form-control" placeholder="Password" value={form.password} onChange={handleChange} required />
+                        </div>
+                        <div className="mb-3">
+                            <select name="role" className="form-control" value={form.role} onChange={handleChange}>
+                                <option value="user">User</option>
+                                <option value="host">Host</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        {error && <div className="alert alert-danger">{error}</div>}
+                        <button type="submit" className="btn btn-primary w-100">Sign Up</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default Signup; 

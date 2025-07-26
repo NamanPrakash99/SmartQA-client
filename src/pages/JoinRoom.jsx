@@ -1,21 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setUser } from "../userSlice";
 
 function JoinRoom() {
-    const [name, setName] = useState(null);
-    const [roomCode, setRoomCode] = useState(null);
+    const [name, setName] = useState("");
+    const [roomCode, setRoomCode] = useState("");
     const [errors, setErrors] = useState({});
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const validate = () => {
         const newErrors = {};
         let isValid = true;
 
-        if (name.length === 0) {
+        if (!name || name.length === 0) {
             isValid = false;
             newErrors.name = "Name is mandatory";
         }
-        if (roomCode.length === 0) {
+        if (!roomCode || roomCode.length === 0) {
             isValid = false;
             newErrors.roomCode = "Room Code is mandatory";
         }
@@ -25,8 +28,8 @@ function JoinRoom() {
 
     const handleSubmit = async () => {
         if (validate()) {
-            localStorage.setItem("participant-name", name);
-            navigate(`/room/${roomCode}`);
+            dispatch(setUser({ name }));
+            navigate(`/room/${roomCode.trim()}`);
         }
     };
     return (
@@ -36,7 +39,7 @@ function JoinRoom() {
                     <h2 className="mb-4 text-center">Join Room</h2>
                     <div className="mb-3">
                         <input type="text" id="name" name="name"
-                            className={errors.name ? 'form-control is-invalid' : 'formcontrol'}
+                            className={errors.name ? 'form-control is-invalid' : 'form-control'}
                             value={name} onChange={(e) => setName(e.target.value)}
                             placeholder="Enter your full name"
                         />
@@ -63,6 +66,5 @@ function JoinRoom() {
         </div>
     );
 }
-
 
 export default JoinRoom;

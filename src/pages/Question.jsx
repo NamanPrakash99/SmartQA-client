@@ -1,10 +1,13 @@
 import { useState } from "react";
 import axios from "axios";
 import { serverEndpoint } from "../config/appConfig";
+import { MessageInput } from '@chatscope/chat-ui-kit-react';
+import { useSelector } from "react-redux";
 
 function Question({ roomCode }) {
     const [question, setQuestion] = useState("");
     const [errors, setErrors] = useState({});
+    const userDetails = useSelector((state) => state.user.userDetails);
 
     const validate = () => {
         const newErrors = {};
@@ -22,8 +25,7 @@ function Question({ roomCode }) {
     const handleSubmit = async () => {
         if (validate()) {
             try {
-                const participantName =
-                    localStorage.getItem("participant-name");
+                const participantName = userDetails?.name;
                 const response = await axios.post(
                     `${serverEndpoint}/room/${roomCode}/question`,
                     {
@@ -32,6 +34,9 @@ function Question({ roomCode }) {
                     },
                     {
                         withCredentials: true,
+                        headers: {
+                            Authorization: userDetails?.token ? `Bearer ${userDetails.token}` : undefined,
+                        },
                     }
                 );
                 console.log(response);
@@ -45,34 +50,59 @@ function Question({ roomCode }) {
         }
     };
 
+    const handleSend = async (message) => {
+        if (message.trim().length === 0) {
+            setErrors({ question: "Question is mandatory" });
+            return;
+        }
+        
+        try {
+            const participantName = userDetails?.name;
+            const response = await axios.post(
+                `${serverEndpoint}/room/${roomCode}/question`,
+                {
+                    content: message,
+                    user: participantName ? participantName : "Anonymous",
+                },
+                {
+                    withCredentials: true,
+                    headers: {
+                        Authorization: userDetails?.token ? `Bearer ${userDetails.token}` : undefined,
+                    },
+                }
+            );
+            console.log(response);
+            setQuestion("");
+            setErrors({});
+        } catch (error) {
+            console.log(error);
+            setErrors({
+                message: "Error posting question, please try again",
+            });
+        }
+    };
+
     return (
         <div className="row py-3">
-            <div className="col-md-5 ">
-                <h5 className="mb-2">Question</h5>
-                <div className="mb-2">
-                    <textarea
-                        id="question"
-                        name="question"
-                        className={
-                            errors.question
-                                ? "form-control is-invalid"
-                                : "form-control"
-                        }
-                        rows="3"
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        placeholder="Enter Question"
+            <div className="col-12">
+                <div style={{ 
+                    border: errors.question ? '2px solid #dc3545' : '1px solid #dee2e6',
+                    borderRadius: '8px',
+                    padding: '10px'
+                }}>
+                    <MessageInput
+                        placeholder="Type your question here..."
+                        onSend={handleSend}
+                        attachButton={false}
+                        sendButton={true}
+                        style={{
+                            border: 'none',
+                            boxShadow: 'none'
+                        }}
                     />
-                    <div className="invalid-feedback">{errors.question}</div>
-                </div>
-                <div className="mb-3">
-                    <button
-                        type="button"
-                        onClick={() => handleSubmit()}
-                        className="btn btn-primary w-100"
-                    >
-                        Submit
-                    </button>
+                    {errors.question && (
+                        <div className="text-danger mt-2 small">{errors.question}</div>
+                    )}
                 </div>
             </div>
         </div>
